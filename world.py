@@ -19,123 +19,137 @@ class World:
         self.reset_pos = False
         self.player_score = 0
         self.game_level = 1
+        self.walls_collide_list = []
         self._generate_world()
-        # create and add player to the screen
+
+    # Gènère la map avec le fichier settings
     def _generate_world(self):
-        # renders obstacle from the MAP table
         for y_index, col in enumerate(MAP):
             for x_index, char in enumerate(col):
-                if char == "1":	# for walls
-                    self.walls.add(Cell(x_index, y_index, CHAR_SIZE, CHAR_SIZE))
-                elif char == " ":	 # for paths to be filled with berries
-                    self.berries.add(Berry(x_index, y_index, CHAR_SIZE // 4))
-                elif char == "B":	# for big berries
-                    self.berries.add(Berry(x_index, y_index, CHAR_SIZE // 2, is_power_up=True))
-                # for Ghosts's starting position
-                elif char == "s":
-                    self.ghosts.add(Ghost(x_index, y_index, "skyblue"))
-                elif char == "p": 
-                    self.ghosts.add(Ghost(x_index, y_index, "pink"))
-                elif char == "o":
-                    self.ghosts.add(Ghost(x_index, y_index, "orange"))
-                elif char == "r":
-                    self.ghosts.add(Ghost(x_index, y_index, "red"))
-
-                elif char == "P":	# for PacMan's starting position 
-                    self.player.add(Pac(x_index, y_index))
-
+                position = (x_index, y_index)
+                self._create_entity(char, position)
         self.walls_collide_list = [wall.rect for wall in self.walls.sprites()]
+
+    def _create_entity(self, char, position):
+        x_index, y_index = position
+        if char == "1":  # Murs
+            self.walls.add(Cell(x_index, y_index, CHAR_SIZE, CHAR_SIZE))
+        elif char == " ":  # Petites baies
+            self.berries.add(Berry(x_index, y_index, CHAR_SIZE // 4))
+        elif char == "B":  # Super baies
+            self.berries.add(Berry(x_index, y_index, CHAR_SIZE // 2, is_power_up=True))
+        elif char in "spro":  # Fantômes
+            color = {"s": "skyblue", "p": "pink", "o": "orange", "r": "red"}[char]
+            self.ghosts.add(Ghost(x_index, y_index, color))
+        elif char == "P":  # Pac-Man
+            self.player.add(Pac(x_index, y_index))
+
     def generate_new_level(self):
         for y_index, col in enumerate(MAP):
             for x_index, char in enumerate(col):
-                if char == " ":	 # for paths to be filled with berries
+                if char == " ":
                     self.berries.add(Berry(x_index, y_index, CHAR_SIZE // 4))
-                elif char == "B":	# for big berries
+                elif char == "B":
                     self.berries.add(Berry(x_index, y_index, CHAR_SIZE // 2, is_power_up=True))
         time.sleep(2)
 
     def restart_level(self):
         self.berries.empty()
-        [ghost.move_to_start_pos() for ghost in self.ghosts.sprites()]
+        for ghost in self.ghosts.sprites():
+            ghost.move_to_start_pos()
+        pacman = self.player.sprite
+        pacman.reset_stats()
         self.game_level = 1
-        self.player.sprite.pac_score = 0
-        self.player.sprite.life = 3
-        self.player.sprite.move_to_start_pos()
-        self.player.sprite.direction = (0, 0)
-        self.player.sprite.status = "idle"
+        self.game_over = False
         self.generate_new_level()
-        # displays nav
+
     def _dashboard(self):
         nav = pygame.Rect(0, HEIGHT, WIDTH, NAV_HEIGHT)
         pygame.draw.rect(self.screen, pygame.Color("cornsilk4"), nav)
-        
-        self.display.show_life(self.player.sprite.life)
+        pacman = self.player.sprite
+        self.display.show_life(pacman.life)
         self.display.show_level(self.game_level)
-        self.display.show_score(self.player.sprite.pac_score)
+        self.display.show_score(pacman.pac_score)
+
     def _check_game_state(self):
-        # checks if game over
-        if self.player.sprite.life == 0:
+        pacman = self.player.sprite
+        if pacman.life <= 0:
             self.game_over = True
-        # generates new level
-        if len(self.berries) == 0 and self.player.sprite.life > 0:
-            self.game_level += 1
-            for ghost in self.ghosts.sprites():
-                ghost.move_speed += self.game_level
-                ghost.move_to_start_pos()
-            self.player.sprite.move_to_start_pos()
-            self.player.sprite.direction = (0, 0)
-            self.player.sprite.status = "idle"
-            self.generate_new_level()
+        elif len(self.berries) == 0 and pacman.life > 0:
+            self._advance_level()
+
+    def _advance_level(self):
+        self.game_level += 1
+        for ghost in self.ghosts.sprites():
+            ghost.increase_speed(self.game_level)
+            ghost.move_to_start_pos()
+        pacman = self.player.sprite
+        pacman.move_to_start_pos()
+        pacman.reset_direction()
+        self.generate_new_level()
+
+    def _handle_teleport(self, pacman):
+        if pacman.rect.right <= 0:
+            pacman.rect.x = WIDTH
+        elif pacman.rect.left >= WIDTH:
+            pacman.rect.x = 0
+
+    def _handle_berry_collision(self, pacman):
+        for berry in self.berries.sprites():
+            if pacman.rect.colliderect(berry.rect):
+                pacman.eat_berry(berry)
+                berry.kill()
+
+    def _handle_ghost_collision(self, pacman):
+        for ghost in self.ghosts.sprites():
+            if pacman.rect.colliderect(ghost.rect):
+                if pacman.immune:
+                    ghost.move_to_start_pos()
+                    pacman.pac_score += 100
+                else:
+                    time.sleep(2)
+                    pacman.life -= 1
+                    self.reset_pos = True
+                    break
+
+    def _reset_positions(self):
+        for ghost in self.ghosts.sprites():
+            ghost.move_to_start_pos()
+        pacman = self.player.sprite
+        pacman.move_to_start_pos()
+        pacman.move_to_start_pos()
+        self.reset_pos = False
+
+    # Met à jour à chaque frames
     def update(self):
         if not self.game_over:
-            # player movement
+            pacman = self.player.sprite
             pressed_key = pygame.key.get_pressed()
-            self.player.sprite.animate(pressed_key, self.walls_collide_list)
-            # teleporting to the other side of the map
-            if self.player.sprite.rect.right <= 0:
-                self.player.sprite.rect.x = WIDTH
-            elif self.player.sprite.rect.left >= WIDTH:
-                self.player.sprite.rect.x = 0
-            # PacMan eating-berry effect
-            for berry in self.berries.sprites():
-                if self.player.sprite.rect.colliderect(berry.rect):
-                    if berry.power_up:
-                        self.player.sprite.immune_time = 150 # Timer based from FPS count
-                        self.player.sprite.pac_score += 50
-                    else:
-                        self.player.sprite.pac_score += 10
-                    berry.kill()
-            # PacMan bumping into ghosts
-            for ghost in self.ghosts.sprites():
-                if self.player.sprite.rect.colliderect(ghost.rect):
-                    if not self.player.sprite.immune:
-                        time.sleep(2)
-                        self.player.sprite.life -= 1
-                        self.reset_pos = True
-                        break
-                    else:
-                        ghost.move_to_start_pos()
-                        self.player.sprite.pac_score += 100
+            pacman.animate(pressed_key, self.walls_collide_list)
+            self._handle_teleport(pacman)
+            self._handle_berry_collision(pacman)
+            self._handle_ghost_collision(pacman)
+
         self._check_game_state()
-        # rendering
+
+        # Rendu des entités
         [wall.update(self.screen) for wall in self.walls.sprites()]
         [berry.update(self.screen) for berry in self.berries.sprites()]
         [ghost.update(self.walls_collide_list) for ghost in self.ghosts.sprites()]
         self.ghosts.draw(self.screen)
         self.player.update()
         self.player.draw(self.screen)
-        self.display.game_over() if self.game_over else None
-        self._dashboard()
-        # reset Pac and Ghosts position after PacMan get captured
-        if self.reset_pos and not self.game_over:
-            [ghost.move_to_start_pos() for ghost in self.ghosts.sprites()]
-            self.player.sprite.move_to_start_pos()
-            self.player.sprite.status = "idle"
-            self.player.sprite.direction = (0,0)
-            self.reset_pos = False
-        # for restart button
+
+        # Tableau de bord
         if self.game_over:
-            pressed_key = pygame.key.get_pressed()
-            if pressed_key[pygame.K_r]:
-                self.game_over = False
-                self.restart_level()
+            self.display.game_over()
+        else:
+            self._dashboard()
+
+        # Réinitialisation des positions
+        if self.reset_pos and not self.game_over:
+            self._reset_positions()
+
+        # Redémarrage du jeu
+        if self.game_over and pygame.key.get_pressed()[pygame.K_r]:
+            self.restart_level()

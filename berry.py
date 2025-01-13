@@ -1,18 +1,31 @@
-# berry.py
 import pygame
-from settings import CHAR_SIZE, PLAYER_SPEED
+from settings import CHAR_SIZE
 
+# Gère les points, elle va changer car au lieu de mettre des cercle dessiné
+# j'opterai pour des images directement
 class Berry(pygame.sprite.Sprite):
-    def __init__(self, row, col, size, is_power_up = False):
+    def __init__(self, row, col, size, is_power_up=False):
+
         super().__init__()
         self.power_up = is_power_up
         self.size = size
-        self.color = pygame.Color("violetred")
-        self.thickness = size
-        self.abs_x = (row * CHAR_SIZE) + (CHAR_SIZE // 2)
-        self.abs_y = (col * CHAR_SIZE) + (CHAR_SIZE // 2)
-        # temporary rect for colliderect-checking
-        self.rect = pygame.Rect(self.abs_x,self.abs_y, self.size * 2, self.size * 2)
+        self.color = pygame.Color("violetred") if not is_power_up else pygame.Color("gold")
+        self.position = (
+            (row * CHAR_SIZE) + (CHAR_SIZE // 2),
+            (col * CHAR_SIZE) + (CHAR_SIZE // 2),
+        )
+
+        # Rectangle pour gérer les collisions
+        self.rect = pygame.Rect(
+            self.position[0] - size, 
+            self.position[1] - size, 
+            size * 2, 
+            size * 2
+        )
+
+
+    def draw(self, screen):
+        pygame.draw.circle(screen, self.color, self.position, self.size)
 
     def update(self, screen):
-        self.rect = pygame.draw.circle(screen, self.color, (self.abs_x, self.abs_y), self.size, self.thickness)
+        self.draw(screen)

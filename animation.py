@@ -1,6 +1,8 @@
 # animation.py
 from os import walk
 import pygame
+
+# La fonction parle d'elle même
 def import_sprite(path):
     surface_list = []
     for _, __, img_file in walk(path):

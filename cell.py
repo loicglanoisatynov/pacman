@@ -1,6 +1,7 @@
 # cell.py
 import pygame
 
+# Gestion de l'affichage des murs, elle va surement changer pour différentes map
 class Cell(pygame.sprite.Sprite):
     def __init__(self, row, col, length, width):
         super().__init__()
