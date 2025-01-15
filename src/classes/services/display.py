@@ -1,5 +1,5 @@
 import pygame
-from settings import WIDTH, HEIGHT, CHAR_SIZE
+from src.settings import WIDTH, HEIGHT, CHAR_SIZE
 pygame.font.init()
 
 # Gère tout l'affichage, va changer pour quelque choses de plus beau
@@ -39,3 +39,4 @@ class Display:
         instruction_position = (WIDTH // 4, HEIGHT // 2)
         self._render_text('GAME OVER!!', self.game_over_font, pygame.Color("chartreuse"), message_position)
         self._render_text('Press "R" to Restart', self.font, pygame.Color("aqua"), instruction_position)
+

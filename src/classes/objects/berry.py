@@ -1,5 +1,5 @@
 import pygame
-from settings import CHAR_SIZE
+from src.settings import CHAR_SIZE
 
 # Gère les points, elle va changer car au lieu de mettre des cercle dessiné
 # j'opterai pour des images directement

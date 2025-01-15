@@ -1,10 +1,11 @@
 import pygame, sys
-from settings import WIDTH, HEIGHT, NAV_HEIGHT
-from world import World
+from src.settings import WIDTH, HEIGHT, NAV_HEIGHT
+from src.classes.objects.world import World
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT + NAV_HEIGHT))
 pygame.display.set_caption("PacMan")
+pygame.display.set_icon(pygame.image.load("assets/pac/right/0.png"))
 
 class Main:
     def __init__(self, screen):

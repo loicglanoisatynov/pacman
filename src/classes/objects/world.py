@@ -1,11 +1,11 @@
 import pygame
 import time
-from settings import HEIGHT, WIDTH, NAV_HEIGHT, CHAR_SIZE, MAP, PLAYER_SPEED
-from pac import Pac
-from cell import Cell
-from berry import Berry
-from ghost import Ghost
-from display import Display
+from src.settings import HEIGHT, WIDTH, NAV_HEIGHT, CHAR_SIZE, MAP, PLAYER_SPEED
+from src.classes.characters.pac import Pac
+from src.classes.objects.cell import Cell
+from src.classes.objects.berry import Berry
+from src.classes.characters.ghost import Ghost
+from src.classes.services.display import Display
 
 class World:
     def __init__(self, screen):

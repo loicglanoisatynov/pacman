@@ -1,6 +1,6 @@
 import pygame
 import random
-from settings import WIDTH, CHAR_SIZE, GHOST_SPEED
+from src.settings import WIDTH, CHAR_SIZE, GHOST_SPEED
 
 class Ghost(pygame.sprite.Sprite):
     def __init__(self, row, col, color):
