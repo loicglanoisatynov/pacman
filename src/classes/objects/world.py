@@ -5,10 +5,11 @@ from src.classes.characters.pac import Pac
 from src.classes.objects.cell import Cell
 from src.classes.objects.berry import Berry
 from src.classes.characters.ghost import Ghost
-from src.classes.services.display import Display
+from src.classes.services.display import Display, set_current_mode
 
 class World:
     def __init__(self, screen):
+        self.font = pygame.font.SysFont("ubuntumono", CHAR_SIZE)
         self.screen = screen
         self.player = pygame.sprite.GroupSingle()
         self.ghosts = pygame.sprite.Group()
@@ -17,10 +18,47 @@ class World:
         self.display = Display(self.screen)
         self.game_over = False
         self.reset_pos = False
+        self.game_over_passed = False
+        self.mode_selected = False
         self.player_score = 0
         self.game_level = 1
         self.walls_collide_list = []
         self._generate_world()
+
+    def paint_world(self):
+        self.screen.fill("black")
+        [wall.update(self.screen) for wall in self.get_walls()]
+        [berry.update(self.screen) for berry in self.get_berries()]
+        [ghost.update(self.walls_collide_list) for ghost in self.get_ghosts()]
+        self.ghosts.draw(self.screen)
+        self.player.update()
+        self.player.draw(self.screen)
+
+    def get_world(self):
+        return self
+    
+    def get_screen(self):
+        return self.screen
+    
+    def get_player(self):
+        return self.player
+    
+    def get_ghosts(self):
+        return self.ghosts
+    
+    def get_walls(self):
+        return self.walls
+    
+    def get_berries(self):
+        return self.berries
+    
+    def get_display(self):
+        return self.display
+
+    def _render_text(self, text, font, color, position):
+        rendered_text = font.render(text, True, color)
+        self.screen.blit(rendered_text, position)
+    
 
     # Gènère la map avec le fichier settings
     def _generate_world(self):
@@ -45,13 +83,14 @@ class World:
             self.player.add(Pac(x_index, y_index))
 
     def generate_new_level(self):
+        
         for y_index, col in enumerate(MAP):
             for x_index, char in enumerate(col):
                 if char == " ":
                     self.berries.add(Berry(x_index, y_index, CHAR_SIZE // 4))
                 elif char == "B":
                     self.berries.add(Berry(x_index, y_index, CHAR_SIZE // 2, is_power_up=True))
-        time.sleep(2)
+        # time.sleep(1)
 
     def restart_level(self):
         self.berries.empty()
@@ -61,6 +100,8 @@ class World:
         pacman.reset_stats()
         self.game_level = 1
         self.game_over = False
+        self.game_over_passed = False
+        self.mode_selected = False
         self.generate_new_level()
 
     def _dashboard(self):
@@ -107,7 +148,7 @@ class World:
                     ghost.move_to_start_pos()
                     pacman.pac_score += 100
                 else:
-                    time.sleep(2)
+                    # time.sleep(2)
                     pacman.life -= 1
                     self.reset_pos = True
                     break
@@ -119,6 +160,27 @@ class World:
         pacman.move_to_start_pos()
         pacman.move_to_start_pos()
         self.reset_pos = False
+
+    def ask_for_mode(self):
+        # Ouvre une fenêtre pour choisir le mode de jeu (humain, IA ou IA training)
+        self._render_text('Choose a mode:', self.font, pygame.Color("aqua"), (WIDTH // 4, HEIGHT // 2))
+        self._render_text('1: Human', self.font, pygame.Color("aqua"), (WIDTH // 4, HEIGHT // 2 + CHAR_SIZE))
+        self._render_text('2: AI', self.font, pygame.Color("aqua"), (WIDTH // 4, HEIGHT // 2 + CHAR_SIZE * 2))
+        self._render_text('3: AI Training', self.font, pygame.Color("aqua"), (WIDTH // 4, HEIGHT // 2 + CHAR_SIZE * 3))
+        
+        mode_selected = False
+        while not mode_selected:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_1:
+                    set_current_mode("human")
+                    mode_selected = True
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_2:
+                    set_current_mode("ai")
+                    mode_selected = True
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_3:
+                    set_current_mode("ai_training")
+                    mode_selected = True
+            pygame.display.update()
 
     # Met à jour à chaque frames
     def update(self):
@@ -133,6 +195,7 @@ class World:
         self._check_game_state()
 
         # Rendu des entités
+        self.screen.fill("black")
         [wall.update(self.screen) for wall in self.walls.sprites()]
         [berry.update(self.screen) for berry in self.berries.sprites()]
         [ghost.update(self.walls_collide_list) for ghost in self.ghosts.sprites()]
@@ -141,15 +204,25 @@ class World:
         self.player.draw(self.screen)
 
         # Tableau de bord
-        if self.game_over:
+        if self.game_over and not self.game_over_passed:
             self.display.game_over()
+            self.game_over_passed = True
+            self.update()
         else:
             self._dashboard()
+
+        if self.game_over and self.game_over_passed and not self.mode_selected:
+            self.ask_for_mode()
+            self.mode_selected = True
+        else:
+            self._dashboard()
+
+        
 
         # Réinitialisation des positions
         if self.reset_pos and not self.game_over:
             self._reset_positions()
 
         # Redémarrage du jeu
-        if self.game_over and pygame.key.get_pressed()[pygame.K_r]:
+        if self.game_over and self.mode_selected and self.game_over_passed:
             self.restart_level()

@@ -28,6 +28,12 @@ WIDTH, HEIGHT = (BOARD_RATIO[0] * CHAR_SIZE, BOARD_RATIO[1] * CHAR_SIZE)
 NAV_HEIGHT = 64
 PLAYER_SPEED = (CHAR_SIZE // 4)
 GHOST_SPEED = 4
+AVAILABLE_MODES = ["human", "ai", "ai_training"]
+CURRENT_MODE = "human"
 
-def get_player_speed():
-    return PLAYER_SPEED
+def set_current_mode(new_mode):
+    global CURRENT_MODE
+    if new_mode in AVAILABLE_MODES:
+        CURRENT_MODE = new_mode
+    else:
+        raise ValueError("Mode not available")
