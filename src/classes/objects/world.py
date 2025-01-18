@@ -1,5 +1,6 @@
 import pygame
 import time
+import numpy as np
 from src.settings import HEIGHT, WIDTH, NAV_HEIGHT, CHAR_SIZE, MAP, PLAYER_SPEED
 from src.classes.characters.pac import Pac
 from src.classes.objects.cell import Cell
@@ -24,6 +25,24 @@ class World:
         self.game_level = 1
         self.walls_collide_list = []
         self._generate_world()
+
+    def get_state(self):
+        pacman = self.get_player().sprite
+        ghosts = [(g.rect.x, g.rect.y) for g in self.get_ghosts()]
+        return np.array([pacman.rect.x, pacman.rect.y] + [x for ghost in ghosts for x in ghost])
+    
+    def step(self, action):
+        pacman = self.get_player().sprite
+        actions = [(0, -1), (0, 1), (-1, 0), (1, 0)]  # Up, Down, Left, Right
+        pacman.direction = actions[action]
+
+        self.update()
+        reward = 1 if pacman.eat_berry() else -1
+        done = self.game_over
+
+        return self.get_state(), reward, done
+
+
 
     def paint_world(self):
         self.screen.fill("black")
@@ -59,8 +78,7 @@ class World:
         rendered_text = font.render(text, True, color)
         self.screen.blit(rendered_text, position)
     
-
-    # Gènère la map avec le fichier settings
+    # Génère la map avec le fichier settings
     def _generate_world(self):
         for y_index, col in enumerate(MAP):
             for x_index, char in enumerate(col):
@@ -83,14 +101,12 @@ class World:
             self.player.add(Pac(x_index, y_index))
 
     def generate_new_level(self):
-        
         for y_index, col in enumerate(MAP):
             for x_index, char in enumerate(col):
                 if char == " ":
                     self.berries.add(Berry(x_index, y_index, CHAR_SIZE // 4))
                 elif char == "B":
                     self.berries.add(Berry(x_index, y_index, CHAR_SIZE // 2, is_power_up=True))
-        # time.sleep(1)
 
     def restart_level(self):
         self.berries.empty()
@@ -148,7 +164,6 @@ class World:
                     ghost.move_to_start_pos()
                     pacman.pac_score += 100
                 else:
-                    # time.sleep(2)
                     pacman.life -= 1
                     self.reset_pos = True
                     break
@@ -191,7 +206,6 @@ class World:
             self._handle_teleport(pacman)
             self._handle_berry_collision(pacman)
             self._handle_ghost_collision(pacman)
-
         self._check_game_state()
 
         # Rendu des entités
@@ -216,8 +230,6 @@ class World:
             self.mode_selected = True
         else:
             self._dashboard()
-
-        
 
         # Réinitialisation des positions
         if self.reset_pos and not self.game_over:

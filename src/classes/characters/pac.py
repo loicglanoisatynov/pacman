@@ -67,7 +67,7 @@ class Pac(pygame.sprite.Sprite):
         if not self._is_moving():
             animation = self.animations[self.status]
             self.image = pygame.transform.scale(animation[0], (CHAR_SIZE, CHAR_SIZE))
-            
+
             return
         animation = self.animations[self.status]
         self.frame_index = (self.frame_index + self.animation_speed) % len(animation)
@@ -82,9 +82,9 @@ class Pac(pygame.sprite.Sprite):
                 break
 
     
-    def _rotate_idle(self):
+    def _rotate_idle(self): # Fonction qui permet de tourner l'image si le pacman est immobile
         if self.last_direction:
-            self.status = self.last_direction  # Garde la dernière direction
+            self.status = self.last_direction
         else:
             self.status = "idle"
 
@@ -94,10 +94,7 @@ class Pac(pygame.sprite.Sprite):
 
     def animate(self, pressed_key, walls_collide_list):
         self.walls_collide_list = walls_collide_list
-        
         self._rotate_idle()
-
-        # if self._is_moving():
         self._update_animation()
         self._update_direction(pressed_key)
 
@@ -106,7 +103,6 @@ class Pac(pygame.sprite.Sprite):
         else:
             self.direction = (0, 0)
             self._rotate_idle()  # Appliquer l'orientation de la dernière direction
-
 
     def eat_berry(self, berry):
         if berry.power_up:
@@ -122,11 +118,6 @@ class Pac(pygame.sprite.Sprite):
         else:
             self.immune = False
 
-        # Avant modification
-        # La fonction get_rect() permet de mettre à jour la position de l'image
-        # self.rect = self.image.get_rect(topleft=(self.rect.x, self.rect.y))
-
-        # Après modification
         if not self._is_moving():
             self._rotate_idle()
         

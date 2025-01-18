@@ -31,7 +31,7 @@ GHOST_SPEED = 4
 AVAILABLE_MODES = ["human", "ai", "ai_training"]
 CURRENT_MODE = "human"
 
-def set_current_mode(new_mode):
+def set_current_mode(new_mode): # Choisit le mode de jeu entre "human", "ai" (qui est un mode automatique non-progressif) et "ai_training" (mode automatique progressif)
     global CURRENT_MODE
     if new_mode in AVAILABLE_MODES:
         CURRENT_MODE = new_mode

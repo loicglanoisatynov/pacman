@@ -2,7 +2,7 @@
 from os import walk
 import pygame
 
-# La fonction parle d'elle même
+# Importe les sprites d'un dossier
 def import_sprite(path):
     surface_list = []
     for _, __, img_file in walk(path):
