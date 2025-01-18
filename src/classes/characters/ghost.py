@@ -38,6 +38,9 @@ class Ghost(pygame.sprite.Sprite):
             )
             for direction in self.keys
         }
+    
+    def increase_speed(self):
+        self.move_speed += 1
 
     # Réinitialisation des positions
     def move_to_start_pos(self):
