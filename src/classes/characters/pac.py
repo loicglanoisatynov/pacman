@@ -1,6 +1,7 @@
 import pygame
-from src.settings import CHAR_SIZE, PLAYER_SPEED
+from src.settings import CHAR_SIZE, PLAYER_SPEED, get_current_mode
 from src.animation import import_sprite
+# from src.classes.objects.world import World
 
 
 class Pac(pygame.sprite.Sprite):
@@ -74,14 +75,22 @@ class Pac(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(animation[int(self.frame_index)], (CHAR_SIZE, CHAR_SIZE))
 
     def _update_direction(self, pressed_key):
-        for key, key_value in self.keys.items():
-            if pressed_key[key_value] and not self._is_collide(*self.directions[key]):
-                self.direction = self.directions[key]
-                self.status = "power_up" if self.immune else key
-                self.last_direction = key  # Stocke la dernière direction avant de s'arrêter
-                break
+        for key, value in self.keys.items():
+            
+            if get_current_mode() == "human":
+                if pressed_key[value]:
+                    if not self._is_collide(*self.directions[key]):
+                        self.direction = self.directions[key]
+                        self.last_direction = key
+                        self.status = key
+            elif get_current_mode() == "ai" or get_current_mode() == "ai_training":
+                
+                    if not self._is_collide(*self.directions[key]):
+                        self.direction = self.directions[key]
+                        self.last_direction = key
+                        self.status = key
 
-    
+
     def _rotate_idle(self): # Fonction qui permet de tourner l'image si le pacman est immobile
         if self.last_direction:
             self.status = self.last_direction

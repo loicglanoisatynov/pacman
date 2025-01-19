@@ -7,6 +7,7 @@ EPISODES = 1000
 BATCH_SIZE = 32
 
 def train():
+    self.screen.fill("black")
     world = World(screen=None)  # On initialise le jeu sans l'afficher
     state_size = len(world.get_state())  # Définir l'espace d'état
     action_size = 4  # Haut, bas, gauche, droite
@@ -19,6 +20,8 @@ def train():
 
         while not done:
             action = agent.act(state)
+            print(action)
+            action = agent.ai_move(state)
             next_state, reward, done = world.step(action)
             agent.remember(state, action, reward, next_state, done)
 

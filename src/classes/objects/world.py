@@ -1,12 +1,15 @@
 import pygame
 import time
 import numpy as np
-from src.settings import HEIGHT, WIDTH, NAV_HEIGHT, CHAR_SIZE, MAP, PLAYER_SPEED
+from src.settings import HEIGHT, WIDTH, NAV_HEIGHT, CHAR_SIZE, MAP, PLAYER_SPEED, CURRENT_MODE, set_current_mode, get_current_mode
 from src.classes.characters.pac import Pac
 from src.classes.objects.cell import Cell
 from src.classes.objects.berry import Berry
 from src.classes.characters.ghost import Ghost
 from src.classes.services.display import Display, set_current_mode
+from src.DQN.Agent import Agent
+
+
 
 class World:
     def __init__(self, screen):
@@ -25,24 +28,27 @@ class World:
         self.game_level = 1
         self.walls_collide_list = []
         self._generate_world()
+        self.agent = Agent(len(self.get_state()), 4)
 
-    def get_state(self):
+    def get_state(self): 
         pacman = self.get_player().sprite
         ghosts = [(g.rect.x, g.rect.y) for g in self.get_ghosts()]
         return np.array([pacman.rect.x, pacman.rect.y] + [x for ghost in ghosts for x in ghost])
     
     def step(self, action):
         pacman = self.get_player().sprite
-        actions = [(0, -1), (0, 1), (-1, 0), (1, 0)]  # Up, Down, Left, Right
-        pacman.direction = actions[action]
+        actions = [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]
+        print(action)
+        print(actions)
+
+        # pacman.direction = pacman.directions[action]
+
 
         self.update()
         reward = 1 if pacman.eat_berry() else -1
         done = self.game_over
 
         return self.get_state(), reward, done
-
-
 
     def paint_world(self):
         self.screen.fill("black")
@@ -180,8 +186,8 @@ class World:
         # Ouvre une fenêtre pour choisir le mode de jeu (humain, IA ou IA training)
         self._render_text('Choose a mode:', self.font, pygame.Color("aqua"), (WIDTH // 4, HEIGHT // 2))
         self._render_text('1: Human', self.font, pygame.Color("aqua"), (WIDTH // 4, HEIGHT // 2 + CHAR_SIZE))
-        self._render_text('2: AI', self.font, pygame.Color("aqua"), (WIDTH // 4, HEIGHT // 2 + CHAR_SIZE * 2))
-        self._render_text('3: AI Training', self.font, pygame.Color("aqua"), (WIDTH // 4, HEIGHT // 2 + CHAR_SIZE * 3))
+        self._render_text('2: AI (very dumb)', self.font, pygame.Color("aqua"), (WIDTH // 4, HEIGHT // 2 + CHAR_SIZE * 2))
+        self._render_text('3: AI Training (not functionnal)', self.font, pygame.Color("aqua"), (WIDTH // 4, HEIGHT // 2 + CHAR_SIZE * 3))
         
         mode_selected = False
         while not mode_selected:
@@ -200,8 +206,22 @@ class World:
     # Met à jour à chaque frames
     def update(self):
         if not self.game_over:
+            pressed_key = {}
             pacman = self.player.sprite
-            pressed_key = pygame.key.get_pressed()
+            if get_current_mode() == "human":
+                pressed_key = pygame.key.get_pressed()
+
+            elif get_current_mode() == "ai":
+                direction = Agent.ai_move(self.agent, self.get_state())
+                pressed_key = {direction: True}
+
+            # print()
+            # print(pressed_key)
+            # print()
+            # print(type(pressed_key))
+            # print()
+
+
             pacman.animate(pressed_key, self.walls_collide_list)
             self._handle_teleport(pacman)
             self._handle_berry_collision(pacman)

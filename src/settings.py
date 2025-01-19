@@ -34,6 +34,10 @@ CURRENT_MODE = "human"
 def set_current_mode(new_mode): # Choisit le mode de jeu entre "human", "ai" (qui est un mode automatique non-progressif) et "ai_training" (mode automatique progressif)
     global CURRENT_MODE
     if new_mode in AVAILABLE_MODES:
+        print(f"Mode set to {new_mode}")
         CURRENT_MODE = new_mode
     else:
         raise ValueError("Mode not available")
+    
+def get_current_mode():
+    return CURRENT_MODE
